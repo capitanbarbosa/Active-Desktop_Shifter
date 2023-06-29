@@ -24,6 +24,8 @@ class ShortcutButtonRow(tk.Frame):
         self.shift_pressed = False
         self.create_widgets()
         self.create_shift_listener()
+        self.configure(bg="#3f4652")  # Set the background color
+
 
     def create_shift_listener(self):
         keyboard.on_press_key("shift", self.on_shift_key_press)
@@ -46,7 +48,7 @@ class ShortcutButtonRow(tk.Frame):
             self.highlight_current_desktop()
 
     def create_widgets(self):
-        self.button_frame = tk.Frame(self)
+        self.button_frame = tk.Frame(self, bg="#3f4652")  # Set the background color
         self.button_frame.pack(side=tk.LEFT)
 
         self.create_default_buttons()
@@ -92,6 +94,7 @@ class ShortcutButtonRow(tk.Frame):
         button.bind("<Button-1>", lambda event, idx=index: self.execute_shortcut(idx))
         button.bind("<Button-3>", lambda event, btn=button: self.edit_button_text(btn))
         button.bind("<Shift-Button-1>", lambda event, idx=index: self.shortcut3(idx))
+        button.bind("<Configure>", update_window_size)  # Bind the Configure event
         self.buttons.append(button)
 
     def edit_button_text(self, button):
@@ -148,8 +151,7 @@ class ShortcutButtonRow(tk.Frame):
         try:
             subprocess.run(["autohotkey", script_path], check=True)
         except subprocess.CalledProcessError:
-            print(f"Failed to execute the AHK script: {script_path}")
-
+            print(f"Failedto execute the AHK script: {script_path}")
 
 
 def on_shift_key_press(event):
@@ -162,10 +164,23 @@ def on_shift_key_release(event):
         button.config(bg="#3f4652")
 
 
+def calculate_window_width():
+    button_widths = [button.winfo_reqwidth() for button in button_row.buttons]
+    total_width = sum(button_widths)
+    return total_width + 10  # Add some extra padding
+
+
+def update_window_size(event):
+    new_width = calculate_window_width()
+    root.geometry(f"{new_width}x32+2180+1410")  # Adjust the window size and position accordingly
+
+
 root = tk.Tk()
 root.overrideredirect(True)
 root.wm_attributes("-topmost", True)
 root.title("Active Window 🚀🌙⭐")
+root.configure(bg="#3f4652")  # Set the background color
+
 
 button_row = ShortcutButtonRow(root)
 button_row.pack(side=tk.TOP)
@@ -173,7 +188,10 @@ button_row.pack(side=tk.TOP)
 root.bind_all("<Control-Key>", on_shift_key_press)
 root.bind_all("<KeyRelease-Control_L>", on_shift_key_release)
 
+button_row.update()  # Ensure that the frame has been updated with the button widths
+button_row_width = button_row.winfo_reqwidth()
+
 # Set the window size based on the button row width
-root.geometry(f"500x63+1055+1377")
+root.geometry(f"{button_row_width}x32+2180+1410")
 
 root.mainloop()
