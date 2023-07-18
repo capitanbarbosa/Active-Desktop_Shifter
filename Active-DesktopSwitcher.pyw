@@ -72,7 +72,7 @@ class ShortcutButtonRow(tk.Frame):
         active_desktop_index = active_desktop.number
         for index, button in enumerate(self.buttons, start=1):
             if str(index) == str(active_desktop_index):
-                button.config(bg="")
+                button.config(bg="#3f7699")
             else:
                 button.config(bg="#3f4652")
         self.after(420, self.highlight_current_desktop)
@@ -159,28 +159,7 @@ class ShortcutButtonRow2(tk.Frame):
         self.buttons = []
         self.shift_pressed = False
         self.create_widgets()
-        self.create_shift_listener()
         self.configure(bg="#3f4699")  # Set the background color
-
-    def create_shift_listener(self):
-        keyboard.on_press_key("shift", self.on_shift_key_press)
-        keyboard.on_release_key("shift", self.on_shift_key_release)
-
-    def on_shift_key_press(self, event):
-        self.shift_pressed = True
-        for button in self.buttons:
-            button.config(bg="#0077CC")
-        self.highlight_current_desktop()
-
-    def on_shift_key_release(self, event):
-        self.shift_pressed = False
-        for button in self.buttons:
-            if button["text"] == "Log":
-                button.config(bg="#3f4699")
-            else:
-                button.config(bg="#3f4652")
-        if not self.shift_pressed:
-            self.highlight_current_desktop()
 
     def create_widgets(self):
         self.button_frame = tk.Frame(self, bg="#3f4652")  # Set the background color
@@ -189,49 +168,49 @@ class ShortcutButtonRow2(tk.Frame):
         self.create_default_buttons()
 
     def create_default_buttons(self):
-        self.create_button(name="📄", bg="#3f4699")
-        self.create_button(name="📄", bg="#3f4652")
-        self.create_button(name="📄", bg="#3f4652")
-        self.create_button(name="📄", bg="#3f4652")
-        self.create_button(name="📄", bg="#3f4652")
-        self.create_button(name="📄", bg="#3f4652")
-        self.create_button(name="📄", bg="#3f4652")
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+        file_directory = os.path.join(current_directory, "Notez")
 
-        self.highlight_current_desktop()
+        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "Log.txt"))
+        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "dev.txt"))
+        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "1.txt"))
+        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "2.txt"))
+        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "3.txt"))
+        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "media-biz.txt"))
+        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "miw.txt"))
 
-    def highlight_current_desktop(self):
-        if self.shift_pressed:
-            return
 
-        active_desktop = VirtualDesktop.current()
-        active_desktop_index = active_desktop.number
-        for index, button in enumerate(self.buttons, start=1):
-            if str(index) == str(active_desktop_index):
-                button.config(bg="#FF0004")
-            else:
-                button.config(bg="#3f4652")
-        self.after(420, self.highlight_current_desktop)
-
-    def create_button(self, name="", padx=5, bg="#3f4652"):
+    def create_button(self, name="", padx=5, bg="#3f4652", file_name=""):
         index = len(self.buttons) + 1
         if (index in [1, 2, 3, 4, 5, 6, 7]) and name:
             text = name
         else:
             text = str(index)
+
+        # button_font = ("Arial", 8)  # Specify the desired font and size
+
         button = tk.Button(
             self.button_frame,
             text=(" " + text + " ").center(padx),
             relief=tk.FLAT,
             bg=bg,
-            fg="white"
+            fg="white",
+            # font=button_font
+            height=2
         )
         button.pack(side=tk.LEFT)
-        button.bind("<Button-1>", lambda event, idx=index: self.execute_shortcut(idx))
+        button.bind("<Button-1>", lambda event, file=file_name: self.open_file(file))
         button.bind("<Button-3>", lambda event, btn=button: self.edit_button_text(btn))
         button.bind("<Shift-Button-1>", lambda event, idx=index: self.shortcut3(idx))
         button.bind("<Configure>", update_window_size)  # Bind the Configure event
         self.buttons.append(button)
-        
+
+    def open_file(self, file_name):
+        try:
+            os.startfile(file_name)
+        except FileNotFoundError:
+            print(f"File not found: {file_name}")
+
     def edit_button_text(self, button):
         current_text = button.cget("text").strip()
         new_text = simpledialog.askstring("Edit Button", "Enter the new text for the button:", initialvalue=current_text)
@@ -308,7 +287,7 @@ def calculate_window_width():
 
 def update_window_size(event):
     new_width = calculate_window_width()
-    root.geometry(f"{new_width}x64+2243+1376")  # Adjust the window size and position accordingly
+    root.geometry(f"{new_width}x59+2242+1382")  # Adjust the window size and position accordingly
 
 
 root = tk.Tk()
@@ -332,6 +311,6 @@ button_row.update()  # Ensure that the frame has been updated with the button wi
 button_row_width = button_row.winfo_reqwidth()
 
 # Set the window size based on the button row width
-root.geometry(f"{button_row_width}x64+2243+1376")
+root.geometry(f"{button_row_width}x59+2242+1382")
 
 root.mainloop()
