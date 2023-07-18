@@ -72,7 +72,7 @@ class ShortcutButtonRow(tk.Frame):
         active_desktop_index = active_desktop.number
         for index, button in enumerate(self.buttons, start=1):
             if str(index) == str(active_desktop_index):
-                button.config(bg="#FF0004")
+                button.config(bg="")
             else:
                 button.config(bg="#3f4652")
         self.after(420, self.highlight_current_desktop)
