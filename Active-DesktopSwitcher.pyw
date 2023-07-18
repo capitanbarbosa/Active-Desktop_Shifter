@@ -13,8 +13,8 @@ desktop2_name = "dev"
 desktop3_name = "1"
 desktop4_name = "2"
 desktop5_name = "3"
-desktop6_name = "miw"
-desktop7_name = "media"
+desktop6_name = "media/biz"
+desktop7_name = "miw"
 
 
 class ShortcutButtonRow(tk.Frame):
@@ -149,7 +149,7 @@ class ShortcutButtonRow(tk.Frame):
         script_path = os.path.abspath(script_path)
         
         try:
-            subprocess.run(["autohotkey", script_path], check=True)
+            subprocess.run(["C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey64.exe", script_path], check=True)
         except subprocess.CalledProcessError:
             print(f"Failedto execute the AHK script: {script_path}")
 
@@ -172,7 +172,7 @@ def calculate_window_width():
 
 def update_window_size(event):
     new_width = calculate_window_width()
-    root.geometry(f"{new_width}x32+2180+1410")  # Adjust the window size and position accordingly
+    root.geometry(f"{new_width}x32+2243+1410")  # Adjust the window size and position accordingly
 
 
 root = tk.Tk()
@@ -192,6 +192,6 @@ button_row.update()  # Ensure that the frame has been updated with the button wi
 button_row_width = button_row.winfo_reqwidth()
 
 # Set the window size based on the button row width
-root.geometry(f"{button_row_width}x32+2180+1410")
+root.geometry(f"{button_row_width}x32+2243+1410")
 
 root.mainloop()
