@@ -72,7 +72,7 @@ class ShortcutButtonRow(tk.Frame):
         active_desktop_index = active_desktop.number
         for index, button in enumerate(self.buttons, start=1):
             if str(index) == str(active_desktop_index):
-                button.config(bg="#3f7699")
+                button.config(bg="#F40000")
             else:
                 button.config(bg="#3f4652")
         self.after(420, self.highlight_current_desktop)
@@ -266,7 +266,6 @@ class ShortcutButtonRow2(tk.Frame):
             subprocess.run(["C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey64.exe", script_path], check=True)
         except subprocess.CalledProcessError:
             print(f"Failedto execute the AHK script: {script_path}")
-
 
 
 def on_shift_key_press(event):
