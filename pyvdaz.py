@@ -16,3 +16,4 @@ VirtualDesktop(1).go()
 
 print("Pinning the current window")
 AppView.current().pin()
+# ...
