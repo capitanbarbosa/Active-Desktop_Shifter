@@ -1,0 +1,9 @@
+terminar to-do's y seguir aplicando...
+
+xp fix - responde la siguiente pregunta para cada headline en el cv:
+	- en tu tiempo en kangupor, 
+		- que technologias aplicaste? 
+		- que responsabilidades tuviste?
+		- que que proyectos llevaste a cabo?
+		- manejaste equipos de gente? trabajaste en conjunto?
+		- 

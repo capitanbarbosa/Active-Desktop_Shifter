@@ -286,7 +286,9 @@ def calculate_window_width():
 
 def update_window_size(event):
     new_width = calculate_window_width()
-    root.geometry(f"{new_width}x59+2242+1382")  # Adjust the window size and position accordingly
+    # root.geometry(f"{new_width}x59+0-1081")  # esquina inferior izquierda main 1080
+    root.geometry(f"{new_width}x59+2100-1081")  # Adjust the window size and position accordingly
+
 
 
 root = tk.Tk()
@@ -310,6 +312,8 @@ button_row.update()  # Ensure that the frame has been updated with the button wi
 button_row_width = button_row.winfo_reqwidth()
 
 # Set the window size based on the button row width
-root.geometry(f"{button_row_width}x59+2242+1382")
+# root.geometry(f"{button_row_width}x59+0-1081")
+root.geometry(f"{button_row_width}x59+2100-1081")
+
 
 root.mainloop()

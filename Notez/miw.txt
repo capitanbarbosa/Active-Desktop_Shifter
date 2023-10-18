@@ -1,7 +1,13 @@
-1.txt
-2.txt
-3.txt
-dev.txt
-Log.txt
-media-biz.txt
-miw.btt
+guardar el piano midi para cuando vayamos a producir.
+
+lo que es practica diaria espontanea, 
+	conseguimos un mini piano normal?
+		o le sampamos rails al escritorio?
+
+
+
+los ganchos aguantan en pilas pero no aguante tener que esta sacando y montando eso al escritorio.
+
+el rail es lo unico que me permitiria sacar y meterlo en rafagas rapidas que no me quiten tiempo en los microempaves.
+
+atornillale el riel al pvc del midi y asi no tenemos extra height ni que tener una tabla abajo pa que sostenga el piano. lo ideal seraun riel pegado al piano pero removible en caso de que lo queramos quitar de abajo y no tener que desatornillarlo. ya lo estoy viendo mejor. se le atornillan bases con una forma y esas forman lockean el riel con el piano y asi nos queda removible y ademas optimo para su uso en esta circunstancia. + 1m ^2 office space. riel enchasable
