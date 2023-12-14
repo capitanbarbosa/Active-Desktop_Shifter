@@ -108,7 +108,7 @@ class ShortcutButtonRow(tk.Frame):
         last_pressed_button = self.buttons[index - 1]
 
         index_str = str(index)
-        last_pressed_button.config(bg="#3f4699")
+        last_pressed_button.config(bg="#F40000")
         pyautogui.keyDown('win')
         pyautogui.keyDown('alt')
         pyautogui.keyDown('shift')
