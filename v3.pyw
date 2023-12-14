@@ -7,13 +7,14 @@ import time
 import os
 import pygetwindow as gw
 
-desktop1_name = "Log"
-desktop2_name = "dev"
-desktop3_name = "1"
-desktop4_name = "2"
-desktop5_name = "3"
-desktop6_name = "media/biz"
-desktop7_name = "miw"
+desktop1_name = "1"
+desktop2_name = "2"
+desktop3_name = "3"
+desktop4_name = "4"
+desktop5_name = "5"
+desktop6_name = "6"
+desktop7_name = "7"
+
 
 def get_active_desktop():
     active_window = gw.getActiveWindow()
@@ -23,6 +24,7 @@ def get_active_desktop():
             if desktop_name in window_title:
                 return index
     return None
+
 
 class ShortcutButtonRow(tk.Frame):
     def __init__(self, master):
@@ -97,22 +99,28 @@ class ShortcutButtonRow(tk.Frame):
             fg="white"
         )
         button.pack(side=tk.LEFT)
-        button.bind("<Button-1>", lambda event, idx=index: self.execute_shortcut(idx))
-        button.bind("<Button-3>", lambda event, btn=button: self.edit_button_text(btn))
-        button.bind("<Shift-Button-1>", lambda event, idx=index: self.shortcut3(idx))
+        button.bind("<Button-1>", lambda event,
+                    idx=index: self.execute_shortcut(idx))
+        button.bind("<Button-3>", lambda event,
+                    btn=button: self.edit_button_text(btn))
+        button.bind("<Shift-Button-1>", lambda event,
+                    idx=index: self.shortcut3(idx))
         button.bind("<Configure>", update_window_size)
         self.buttons.append(button)
 
     def edit_button_text(self, button):
         current_text = button.cget("text").strip()
-        new_text = simpledialog.askstring("Edit Button", "Enter the new text for the button:", initialvalue=current_text)
+        new_text = simpledialog.askstring(
+            "Edit Button", "Enter the new text for the button:", initialvalue=current_text)
         if new_text:
             button.config(text=(" " + new_text + " ").center(5))
             index = self.buttons.index(button)
             if isinstance(self, ShortcutButtonRow):
-                row2.buttons[index].config(text=(" " + new_text + " ").center(5))
+                row2.buttons[index].config(
+                    text=(" " + new_text + " ").center(5))
             elif isinstance(self, ShortcutButtonRow2):
-                row.buttons[index].config(text=(" " + new_text + " ").center(5))
+                row.buttons[index].config(
+                    text=(" " + new_text + " ").center(5))
 
     def execute_shift(self, index):
         ahk_script = r'"C:\Program Files\AutoHotkey\UX\AutoHotkeyUX.exe"'
@@ -122,7 +130,8 @@ class ShortcutButtonRow(tk.Frame):
     def execute_shortcut(self, index):
         index_str = str(index)
         for button in self.buttons:
-            button.config(bg="#FF99" if button["text"] == index_str else "#3f4652")
+            button.config(
+                bg="#FF99" if button["text"] == index_str else "#3f4652")
         pyautogui.keyDown('win')
         pyautogui.keyDown('alt')
         pyautogui.keyDown('shift')
@@ -135,31 +144,38 @@ class ShortcutButtonRow(tk.Frame):
         if index < 1 or index > 7:
             print("Invalid index number. Please provide a number between 1 and 7.")
             return
-        
-        script_path = os.path.join("DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
+
+        script_path = os.path.join(
+            "DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
         script_path = os.path.abspath(script_path)
-        
+
         try:
-            subprocess.run(["C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey64.exe", script_path], check=True)
+            subprocess.run(
+                ["C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey64.exe", script_path], check=True)
         except subprocess.CalledProcessError:
             print(f"Failed to execute the AHK script: {script_path}")
+
 
 def on_shift_key_press(event):
     for button in row.buttons:
         button.config(bg="#31887A")
 
+
 def on_shift_key_release(event):
     for button in row.buttons:
         button.config(bg="#3f4652")
+
 
 def calculate_window_width():
     button_widths = [button.winfo_reqwidth() for button in button_row.buttons]
     total_width = sum(button_widths)
     return total_width + 10
 
+
 def update_window_size(event):
     new_width = calculate_window_width()
     root.geometry(f"{new_width}x59+2100-1081")
+
 
 root = tk.Tk()
 root.overrideredirect(True)
@@ -171,6 +187,8 @@ button_row = ShortcutButtonRow(root)
 button_row.pack(side=tk.BOTTOM)
 
 # Define the ShortcutButtonRow2 class here
+
+
 class ShortcutButtonRow2(tk.Frame):
     def __init__(self, master):
         super().__init__(master)
@@ -186,13 +204,20 @@ class ShortcutButtonRow2(tk.Frame):
         self.create_default_buttons()
 
     def create_default_buttons(self):
-        self.create_button(name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\Log.txt")
-        self.create_button(name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\dev.txt")
-        self.create_button(name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\1.txt")
-        self.create_button(name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\2.txt")
-        self.create_button(name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\3.txt")
-        self.create_button(name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\media-biz.txt")
-        self.create_button(name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\miw.txt")
+        self.create_button(
+            name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\Log.txt")
+        self.create_button(
+            name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\dev.txt")
+        self.create_button(
+            name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\1.txt")
+        self.create_button(
+            name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\2.txt")
+        self.create_button(
+            name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\3.txt")
+        self.create_button(
+            name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\media-biz.txt")
+        self.create_button(
+            name="📄", bg="#1e2127", file_name=r"C:\Users\wiz\Coding\Active-Desktop_Shifter\Notez\miw.txt")
 
     def create_button(self, name="", padx=5, bg="#3f4652", file_name=""):
         index = len(self.buttons) + 1
@@ -209,9 +234,12 @@ class ShortcutButtonRow2(tk.Frame):
             height=2
         )
         button.pack(side=tk.LEFT)
-        button.bind("<Button-1>", lambda event, file=file_name: self.open_file(file))
-        button.bind("<Button-3>", lambda event, btn=button: self.edit_button_text(btn))
-        button.bind("<Shift-Button-1>", lambda event, idx=index: self.shortcut3(idx))
+        button.bind("<Button-1>", lambda event,
+                    file=file_name: self.open_file(file))
+        button.bind("<Button-3>", lambda event,
+                    btn=button: self.edit_button_text(btn))
+        button.bind("<Shift-Button-1>", lambda event,
+                    idx=index: self.shortcut3(idx))
         button.bind("<Configure>", update_window_size)
         self.buttons.append(button)
 
@@ -220,6 +248,7 @@ class ShortcutButtonRow2(tk.Frame):
             os.startfile(file_name)
         except FileNotFoundError:
             print(f"File not found: {file_name}")
+
 
 # Create an instance of ShortcutButtonRow2
 button_row2 = ShortcutButtonRow2(root)
