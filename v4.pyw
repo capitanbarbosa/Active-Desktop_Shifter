@@ -152,6 +152,7 @@ def calculate_window_width():
 def update_window_size(event):
     new_width = calculate_window_width()
     root.geometry(f"{new_width}x59+2100-1081")
+    # root.geometry(f"{new_width}x69+1200+1012")
 
 
 root = tk.Tk()
@@ -236,5 +237,7 @@ root.bind_all("<KeyRelease-Control_L>", on_shift_key_release)
 button_row.update()
 button_row_width = button_row.winfo_reqwidth()
 root.geometry(f"{button_row_width}x59+2100-1081")
+# root.geometry(f"{button_row_width}x69+1200+1012")
+
 
 root.mainloop()
