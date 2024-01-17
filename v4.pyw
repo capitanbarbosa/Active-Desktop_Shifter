@@ -5,11 +5,27 @@ import pyautogui
 import subprocess
 import time
 import os
+import json
+
+CONFIG_FILE_PATH = 'button_config.json'
 
 # Replace the desktop names with your own
-desktop_names = ["Log", "dev", "3", "4", "5", "6", "7"]
+# desktop_names = ["Log", "dev", "3", "4", "5", "6", "7"]
 
 last_pressed_button = None  # To keep track of the last pressed button
+
+
+def load_button_names():
+    try:
+        with open(CONFIG_FILE_PATH, 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return ["Log", "dev", "3", "4", "5", "6", "7"]
+
+
+def save_button_names(names):
+    with open(CONFIG_FILE_PATH, 'w') as file:
+        json.dump(names, file)
 
 
 def get_active_desktop():
@@ -21,6 +37,7 @@ class ShortcutButtonRow(tk.Frame):
         super().__init__(master)
         self.buttons = []
         self.shift_pressed = False
+        self.desktop_names = load_button_names()
         self.create_widgets()
         self.configure(bg="#3f4652")
 
@@ -50,11 +67,15 @@ class ShortcutButtonRow(tk.Frame):
 
         self.create_default_buttons()
 
-    def create_default_buttons(self):
-        # self.create_button(name=desktop_names[0], bg="#3f4699")
-        for index in range(0, 7):
-            self.create_button(name=desktop_names[index], bg="#3f4652")
+    # def create_default_buttons(self):
+    #     # self.create_button(name=desktop_names[0], bg="#3f4699")
+    #     for index in range(0, 7):
+    #         self.create_button(name=desktop_names[index], bg="#3f4652")
 
+    #     self.highlight_current_desktop()
+    def create_default_buttons(self):
+        for index, name in enumerate(self.desktop_names):
+            self.create_button(name=name, bg="#3f4652")
         self.highlight_current_desktop()
 
     def highlight_current_desktop(self):
@@ -93,6 +114,14 @@ class ShortcutButtonRow(tk.Frame):
         button.bind("<Configure>", update_window_size)
         self.buttons.append(button)
 
+    # def edit_button_text(self, button):
+    #     current_text = button.cget("text").strip()
+    #     new_text = simpledialog.askstring(
+    #         "Edit Button", "Enter the new text for the button:", initialvalue=current_text)
+    #     if new_text:
+    #         button.config(text=(" " + new_text + " ").center(5))
+    #         index = self.buttons.index(button)
+
     def edit_button_text(self, button):
         current_text = button.cget("text").strip()
         new_text = simpledialog.askstring(
@@ -100,6 +129,8 @@ class ShortcutButtonRow(tk.Frame):
         if new_text:
             button.config(text=(" " + new_text + " ").center(5))
             index = self.buttons.index(button)
+            self.desktop_names[index] = new_text
+            save_button_names(self.desktop_names)
 
     def execute_shortcut(self, index):
         global last_pressed_button
