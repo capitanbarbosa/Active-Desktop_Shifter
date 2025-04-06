@@ -10,11 +10,10 @@ import os
 
 desktop1_name = "Log"
 desktop2_name = "dev"
-desktop3_name = "1"
-desktop4_name = "2"
-desktop5_name = "3"
-desktop6_name = "media/biz"
-desktop7_name = "miw"
+desktop3_name = "miw1"
+desktop4_name = "miw2"
+desktop5_name = "media"
+desktop6_name = "make"
 
 
 class ShortcutButtonRow(tk.Frame):
@@ -60,7 +59,6 @@ class ShortcutButtonRow(tk.Frame):
         self.create_button(name=desktop4_name, bg="#3f4652")
         self.create_button(name=desktop5_name, bg="#3f4652")
         self.create_button(name=desktop6_name, bg="#3f4652")
-        self.create_button(name=desktop7_name, bg="#3f4652")
 
         self.highlight_current_desktop()
 
@@ -79,7 +77,7 @@ class ShortcutButtonRow(tk.Frame):
 
     def create_button(self, name="", padx=5, bg="#3f4652"):
         index = len(self.buttons) + 1
-        if (index in [1, 2, 3, 4, 5, 6, 7]) and name:
+        if (index in [1, 2, 3, 4, 5, 6]) and name:
             text = name
         else:
             text = str(index)
@@ -141,8 +139,8 @@ class ShortcutButtonRow(tk.Frame):
         pyautogui.keyUp('shift')
 
     def shortcut3(self, index):
-        if index < 1 or index > 7:
-            print("Invalid index number. Please provide a number between 1 and 7.")
+        if index < 1 or index > 6:
+            print("Invalid index number. Please provide a number between 1 and 6.")
             return
         
         script_path = os.path.join("DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
@@ -173,16 +171,15 @@ class ShortcutButtonRow2(tk.Frame):
 
         self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "Log.txt"))
         self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "dev.txt"))
-        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "1.txt"))
-        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "2.txt"))
-        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "3.txt"))
-        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "media-biz.txt"))
-        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "miw.txt"))
+        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "miw1.txt"))
+        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "miw2.txt"))
+        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "media.txt"))
+        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "make.txt"))
 
 
     def create_button(self, name="", padx=5, bg="#3f4652", file_name=""):
         index = len(self.buttons) + 1
-        if (index in [1, 2, 3, 4, 5, 6, 7]) and name:
+        if (index in [1, 2, 3, 4, 5, 6]) and name:
             text = name
         else:
             text = str(index)
@@ -255,8 +252,8 @@ class ShortcutButtonRow2(tk.Frame):
         pyautogui.keyUp('shift')
 
     def shortcut3(self, index):
-        if index < 1 or index > 7:
-            print("Invalid index number. Please provide a number between 1 and 7.")
+        if index < 1 or index > 6:
+            print("Invalid index number. Please provide a number between 1 and 6.")
             return
         
         script_path = os.path.join("DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
@@ -286,8 +283,7 @@ def calculate_window_width():
 
 def update_window_size(event):
     new_width = calculate_window_width()
-    # root.geometry(f"{new_width}x59+0-1081")  # esquina inferior izquierda main 1080
-    root.geometry(f"{new_width}x59+2100-1081")  # Adjust the window size and position accordingly
+    root.geometry(f"{new_width}x59+2900-0")  # Position near bottom right for 4K screen
 
 
 
@@ -312,8 +308,7 @@ button_row.update()  # Ensure that the frame has been updated with the button wi
 button_row_width = button_row.winfo_reqwidth()
 
 # Set the window size based on the button row width
-# root.geometry(f"{button_row_width}x59+0-1081")
-root.geometry(f"{button_row_width}x59+2100-1081")
+root.geometry(f"{button_row_width}x59+2900-0")  # Position near bottom right for 4K screen
 
 
 root.mainloop()
