@@ -6,6 +6,7 @@ import subprocess
 from pyvda import VirtualDesktop
 import time
 import os
+import sys
 
 
 desktop1_name = "Log"
@@ -145,8 +146,7 @@ class ShortcutButtonRow(tk.Frame):
             print("Invalid index number. Please provide a number between 1 and 7.")
             return
         
-        script_path = os.path.join("DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
-        script_path = os.path.abspath(script_path)
+        script_path = get_resource_path(os.path.join("DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk"))
         
         try:
             subprocess.run(["C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey64.exe", script_path], check=True)
@@ -168,8 +168,7 @@ class ShortcutButtonRow2(tk.Frame):
         self.create_default_buttons()
 
     def create_default_buttons(self):
-        current_directory = os.path.dirname(os.path.abspath(__file__))
-        file_directory = os.path.join(current_directory, "Notez")
+        file_directory = get_resource_path("Notez")
 
         self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "Log.txt"))
         self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "dev.txt"))
@@ -259,13 +258,12 @@ class ShortcutButtonRow2(tk.Frame):
             print("Invalid index number. Please provide a number between 1 and 7.")
             return
         
-        script_path = os.path.join("DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
-        script_path = os.path.abspath(script_path)
+        script_path = get_resource_path(os.path.join("DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk"))
         
         try:
             subprocess.run(["C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey64.exe", script_path], check=True)
         except subprocess.CalledProcessError:
-            print(f"Failedto execute the AHK script: {script_path}")
+            print(f"Failed to execute the AHK script: {script_path}")
 
 
 def on_shift_key_press(event):
@@ -287,8 +285,19 @@ def calculate_window_width():
 def update_window_size(event):
     new_width = calculate_window_width()
     # root.geometry(f"{new_width}x59+0-1081")  # esquina inferior izquierda main 1080
-    root.geometry(f"{new_width}x59+2100-1081")  # Adjust the window size and position accordingly
+    # root.geometry(f"{new_width}x59+2100-1081")  # Adjust the window size and position accordingly
+    root.geometry(f"{new_width}x59+1607+1601")  # Moved 100px right and 10px down (1507+100, 1591+10)
 
+
+def get_resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    
+    return os.path.join(base_path, relative_path)
 
 
 root = tk.Tk()
@@ -313,7 +322,8 @@ button_row_width = button_row.winfo_reqwidth()
 
 # Set the window size based on the button row width
 # root.geometry(f"{button_row_width}x59+0-1081")
-root.geometry(f"{button_row_width}x59+2100-1081")
+# root.geometry(f"{button_row_width}x59+2100-1081")
+root.geometry(f"{button_row_width}x59+1607+1601")  # Moved 100px right and 10px down (1507+100, 1591+10)
 
 
 root.mainloop()
