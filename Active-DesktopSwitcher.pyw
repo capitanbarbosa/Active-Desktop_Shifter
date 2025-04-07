@@ -13,7 +13,8 @@ desktop2_name = "dev"
 desktop3_name = "miw1"
 desktop4_name = "miw2"
 desktop5_name = "media"
-desktop6_name = "make"
+desktop6_name = "media 2"
+desktop7_name = "make"
 
 
 class ShortcutButtonRow(tk.Frame):
@@ -59,6 +60,7 @@ class ShortcutButtonRow(tk.Frame):
         self.create_button(name=desktop4_name, bg="#3f4652")
         self.create_button(name=desktop5_name, bg="#3f4652")
         self.create_button(name=desktop6_name, bg="#3f4652")
+        self.create_button(name=desktop7_name, bg="#3f4652")
 
         self.highlight_current_desktop()
 
@@ -77,7 +79,7 @@ class ShortcutButtonRow(tk.Frame):
 
     def create_button(self, name="", padx=5, bg="#3f4652"):
         index = len(self.buttons) + 1
-        if (index in [1, 2, 3, 4, 5, 6]) and name:
+        if (index in [1, 2, 3, 4, 5, 6, 7]) and name:
             text = name
         else:
             text = str(index)
@@ -139,8 +141,8 @@ class ShortcutButtonRow(tk.Frame):
         pyautogui.keyUp('shift')
 
     def shortcut3(self, index):
-        if index < 1 or index > 6:
-            print("Invalid index number. Please provide a number between 1 and 6.")
+        if index < 1 or index > 7:
+            print("Invalid index number. Please provide a number between 1 and 7.")
             return
         
         script_path = os.path.join("DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
@@ -174,12 +176,13 @@ class ShortcutButtonRow2(tk.Frame):
         self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "miw1.txt"))
         self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "miw2.txt"))
         self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "media.txt"))
+        self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "media2.txt"))
         self.create_button(name="📄", bg="#1e2127", file_name=os.path.join(file_directory, "make.txt"))
 
 
     def create_button(self, name="", padx=5, bg="#3f4652", file_name=""):
         index = len(self.buttons) + 1
-        if (index in [1, 2, 3, 4, 5, 6]) and name:
+        if (index in [1, 2, 3, 4, 5, 6, 7]) and name:
             text = name
         else:
             text = str(index)
@@ -252,8 +255,8 @@ class ShortcutButtonRow2(tk.Frame):
         pyautogui.keyUp('shift')
 
     def shortcut3(self, index):
-        if index < 1 or index > 6:
-            print("Invalid index number. Please provide a number between 1 and 6.")
+        if index < 1 or index > 7:
+            print("Invalid index number. Please provide a number between 1 and 7.")
             return
         
         script_path = os.path.join("DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
