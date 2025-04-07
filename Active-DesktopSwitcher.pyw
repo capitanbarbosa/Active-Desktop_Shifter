@@ -8,6 +8,8 @@ import time
 import os
 import sys
 import threading
+import win32gui
+import win32con
 
 # Integration mode check
 INTEGRATION_MODE = "--integrate-with-systray" in sys.argv
@@ -26,6 +28,10 @@ hide_timer = None
 mouse_inside = False
 # Flag to track window visibility state
 window_visible = True
+
+# Add these new variables at the top with the other global variables
+last_mouse_check = 0
+MOUSE_CHECK_INTERVAL = 100  # milliseconds
 
 class ShortcutButtonRow(tk.Frame):
     def __init__(self, master):
@@ -282,13 +288,17 @@ def on_enter(event):
     if hide_timer is not None:
         root.after_cancel(hide_timer)
         hide_timer = None
+    
+    # Make sure window is fully visible instantly
+    if not window_visible:
+        fade_in()
 
 def on_leave(event):
     """Handle mouse leaving the window"""
     global mouse_inside, hide_timer
     
     mouse_inside = False
-    # Start the hide timer
+    # Start the hide timer - always wait 3 seconds
     if hide_timer is not None:
         root.after_cancel(hide_timer)
     hide_timer = root.after(3000, fade_out)  # 3 seconds before fading out
@@ -318,31 +328,20 @@ def fade_out():
     root.attributes('-alpha', 1.0)
 
 def fade_in():
-    """Gradually fade in the window"""
+    """Instantly show the window"""
     global window_visible, hide_timer
     
     # Cancel any pending hide timer
     if hide_timer is not None:
         root.after_cancel(hide_timer)
+        hide_timer = None
     
-    # Make window visible first
+    # Make window visible immediately at full opacity
     root.deiconify()
-    
-    # Start with zero opacity
-    root.attributes('-alpha', 0.0)
+    root.attributes('-alpha', 1.0)
     root.update()
     
-    # Fade in over 300ms (10 steps of 30ms)
-    for alpha in range(1, 11):
-        opacity = alpha / 10.0
-        root.attributes('-alpha', opacity)
-        root.update()
-        time.sleep(0.03)
-    
     window_visible = True
-    
-    # Start hide timer
-    hide_timer = root.after(3000, fade_out)
     
     # Restart highlight animation
     button_row.highlight_current_desktop()
@@ -386,12 +385,58 @@ def move_active_window_to_desktop(desktop_number):
     except Exception as e:
         print(f"Error moving window to desktop {desktop_number}: {e}")
 
+# Add this new function
+def check_mouse_position():
+    """Check if mouse is in the window area and show if needed"""
+    global window_visible, last_mouse_check
+    
+    current_time = time.time() * 1000  # Convert to milliseconds
+    if current_time - last_mouse_check < MOUSE_CHECK_INTERVAL:
+        # Check again after interval
+        root.after(MOUSE_CHECK_INTERVAL, check_mouse_position)
+        return
+        
+    last_mouse_check = current_time
+    
+    if not window_visible:
+        # Get mouse position
+        mouse_x = root.winfo_pointerx()
+        mouse_y = root.winfo_pointery()
+        
+        # Get screen dimensions
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+        
+        # Calculate window area (same as in position_window_above_taskbar)
+        window_width = button_row_width
+        window_height = 59
+        taskbar_height = 40
+        
+        # Calculate window position
+        window_x = screen_width - window_width - 10
+        window_y = screen_height - window_height - taskbar_height - 30
+        
+        # Check if mouse is in window area and show instantly if true
+        if (window_x <= mouse_x <= window_x + window_width and 
+            window_y <= mouse_y <= window_y + window_height):
+            fade_in()  # This is now instant
+    
+    # Check again after interval
+    root.after(MOUSE_CHECK_INTERVAL, check_mouse_position)
+
 # Initialize the UI
 root = tk.Tk()
 root.overrideredirect(True)
 root.wm_attributes("-topmost", True)
 root.title("Active Window 🚀🌙⭐")
 root.configure(bg="#3f4652")  # Set the background color
+
+# Make window visible on all desktops
+hwnd = win32gui.GetParent(root.winfo_id())
+win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE,
+                      win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE) | win32con.WS_EX_TOOLWINDOW)
+root.after(10, lambda: win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
+                                           win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE))
 
 button_row = ShortcutButtonRow(root)
 button_row.pack(side=tk.BOTTOM)
@@ -429,5 +474,8 @@ else:
 
 # Start updating desktop highlights
 button_row.highlight_current_desktop()
+
+# Start the mouse position checker
+check_mouse_position()
 
 root.mainloop()
