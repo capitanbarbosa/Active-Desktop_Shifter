@@ -7,6 +7,7 @@ import os
 import time
 import json
 import threading
+import subprocess
 
 # Configuration file for desktop names
 CONFIG_FILE_PATH = 'desktop_names.json'
@@ -38,6 +39,12 @@ restart_needed = False
 
 # Variable to track the current desktop in the polling thread
 last_known_desktop = None
+
+# Path to the Active-DesktopSwitcher.pyw file
+DESKTOP_SWITCHER_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Active-DesktopSwitcher.pyw")
+
+# Process handle for the desktop switcher window
+desktop_switcher_process = None
 
 def load_desktop_names():
     try:
@@ -258,6 +265,7 @@ def switch_to_desktop(desktop_number):
     print(f"Switching to desktop {desktop_number}")
     VirtualDesktop(desktop_number).go()
     update_icons()  # Update all icons to highlight current desktop
+    show_desktop_switcher()  # Show the desktop switcher temporarily
 
 def move_window_to_desktop(desktop_number):
     current_window = AppView.current()
@@ -416,11 +424,12 @@ def monitor_desktop_changes():
             # Get the current desktop number
             current_desktop = VirtualDesktop.current().number
             
-            # If it changed, update the icons
+            # If it changed, update the icons and show the desktop switcher
             if current_desktop != last_known_desktop:
                 print(f"Desktop changed from {last_known_desktop} to {current_desktop} (external)")
                 last_known_desktop = current_desktop
                 update_icons()
+                show_desktop_switcher()  # Show the desktop switcher temporarily
         except Exception as e:
             # In case of any error, just log and continue
             print(f"Error monitoring desktop changes: {e}")
@@ -444,6 +453,9 @@ def create_and_run_icons():
         icon = create_desktop_icon(i, name)
         icons.insert(0, icon)  # Insert at beginning to maintain correct order reference
 
+    # Launch the desktop switcher script initially
+    launch_desktop_switcher()
+    
     # Start the desktop monitoring thread
     monitor_thread = threading.Thread(target=monitor_desktop_changes)
     monitor_thread.daemon = True
@@ -463,6 +475,35 @@ desktop_names = load_desktop_names()
 
 # Load desktop colors from config
 desktop_color_map = load_desktop_colors()
+
+# Move these functions BEFORE create_and_run_icons()
+def show_desktop_switcher():
+    """Show the Active-DesktopSwitcher window temporarily"""
+    try:
+        # Send a command to the switcher window to show itself
+        with open("desktop_switcher_command.txt", "w") as f:
+            f.write("show")
+    except Exception as e:
+        print(f"Error showing desktop switcher: {e}")
+        # If the command approach fails, try launching the script directly
+        launch_desktop_switcher()
+
+def launch_desktop_switcher():
+    """Launch the Active-DesktopSwitcher script if it's not already running"""
+    global desktop_switcher_process
+    
+    try:
+        # Check if the process is still running
+        if desktop_switcher_process is None or desktop_switcher_process.poll() is not None:
+            # Start the process with a special command line argument for integration
+            desktop_switcher_process = subprocess.Popen(
+                ["python", DESKTOP_SWITCHER_SCRIPT, "--integrate-with-systray"],
+                stderr=subprocess.PIPE,
+                stdout=subprocess.PIPE
+            )
+            print("Launched desktop switcher")
+    except Exception as e:
+        print(f"Error launching desktop switcher: {e}")
 
 # Start creating and running icons
 create_and_run_icons()
