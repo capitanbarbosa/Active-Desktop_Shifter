@@ -262,9 +262,30 @@ def calculate_window_width():
     total_width = sum(button_widths)
     return total_width + 10  # Add some extra padding
 
+def position_window_above_taskbar():
+    """Position the window just above the taskbar in the lower right corner"""
+    # Get screen dimensions
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    
+    # Get window dimensions
+    window_width = root.winfo_width()
+    window_height = root.winfo_height()
+    
+    # Get taskbar height (approximate method)
+    taskbar_height = 40  # Default Windows 10/11 taskbar height
+    
+    # Calculate position (right side of screen, just above taskbar)
+    x_position = screen_width - window_width - 10  # 10px from right edge
+    y_position = screen_height - window_height - taskbar_height - 30  # Increased gap to 30px
+    
+    # Set the window position
+    root.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")
+
 def update_window_size(event):
     new_width = calculate_window_width()
-    root.geometry(f"{new_width}x59+2900-0")  # Position near bottom right for 4K screen
+    root.geometry(f"{new_width}x59")  # Only set size, not position
+    root.after(10, position_window_above_taskbar)  # Position after size is updated
 
 # New functions for fade effects and hover detection
 
@@ -392,7 +413,12 @@ button_row.update()  # Ensure that the frame has been updated with the button wi
 button_row_width = button_row.winfo_reqwidth()
 
 # Set the window size based on the button row width
-root.geometry(f"{button_row_width}x59+2900-0")  # Position near bottom right for 4K screen
+# Don't specify position yet, just set the size
+root.geometry(f"{button_row_width}x59")
+
+# Position the window correctly
+root.update_idletasks()  # Make sure window dimensions are updated
+position_window_above_taskbar()
 
 # If in integration mode, hide the window initially and start checking for commands
 if INTEGRATION_MODE:
