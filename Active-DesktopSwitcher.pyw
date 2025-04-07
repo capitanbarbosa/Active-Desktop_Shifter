@@ -372,16 +372,14 @@ def check_command_file():
     root.after(500, check_command_file)
 
 def move_active_window_to_desktop(desktop_number):
-    """Move the currently active window to the specified desktop and follow it"""
+    """Move the currently active window to the specified desktop without following it"""
     try:
         # Get the current active window
         current_window = AppView.current()
         # Get the target desktop
         target_desktop = VirtualDesktop(desktop_number)
-        # Move the window
+        # Move the window without following it
         current_window.move(target_desktop)
-        # Follow the window to the target desktop
-        target_desktop.go()
     except Exception as e:
         print(f"Error moving window to desktop {desktop_number}: {e}")
 
