@@ -3,7 +3,7 @@ from tkinter import simpledialog
 import keyboard
 import pyautogui
 import subprocess
-from pyvda import VirtualDesktop
+from pyvda import VirtualDesktop, AppView
 import time
 import os
 import sys
@@ -158,15 +158,7 @@ class ShortcutButtonRow(tk.Frame):
             print("Invalid index number. Please provide a number between 1 and 7.")
             return
         
-        # Get the directory where this Python script is located
-        current_directory = os.path.dirname(os.path.abspath(__file__))
-        # Create absolute path to the AHK script in the DesktopSwitcher subfolder
-        script_path = os.path.join(current_directory, "DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
-        
-        try:
-            subprocess.run(["C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey64.exe", script_path], check=True)
-        except subprocess.CalledProcessError:
-            print(f"Failed to execute the AHK script: {script_path}")
+        move_active_window_to_desktop(index)
 
 class ShortcutButtonRow2(tk.Frame):
     def __init__(self, master):
@@ -239,15 +231,7 @@ class ShortcutButtonRow2(tk.Frame):
             print("Invalid index number. Please provide a number between 1 and 7.")
             return
         
-        # Get the directory where this Python script is located
-        current_directory = os.path.dirname(os.path.abspath(__file__))
-        # Create absolute path to the AHK script in the DesktopSwitcher subfolder
-        script_path = os.path.join(current_directory, "DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
-        
-        try:
-            subprocess.run(["C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey64.exe", script_path], check=True)
-        except subprocess.CalledProcessError:
-            print(f"Failed to execute the AHK script: {script_path}")
+        move_active_window_to_desktop(index)
 
 def on_shift_key_press(event):
     for button in row.buttons:
@@ -387,6 +371,20 @@ def check_command_file():
     
     # Check again after 0.5 seconds
     root.after(500, check_command_file)
+
+def move_active_window_to_desktop(desktop_number):
+    """Move the currently active window to the specified desktop and follow it"""
+    try:
+        # Get the current active window
+        current_window = AppView.current()
+        # Get the target desktop
+        target_desktop = VirtualDesktop(desktop_number)
+        # Move the window
+        current_window.move(target_desktop)
+        # Follow the window to the target desktop
+        target_desktop.go()
+    except Exception as e:
+        print(f"Error moving window to desktop {desktop_number}: {e}")
 
 # Initialize the UI
 root = tk.Tk()
