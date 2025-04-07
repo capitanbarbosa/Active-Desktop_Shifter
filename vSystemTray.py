@@ -1,5 +1,5 @@
 import pystray
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from pyvda import VirtualDesktop, AppView, get_virtual_desktops
 import tkinter as tk
 import os
@@ -12,10 +12,16 @@ def create_numbered_icon(number, is_current=False):
     # Create a simple colored square with a number
     img = Image.new('RGB', (64, 64), color=(0, 120, 200) if is_current else (100, 100, 100))
     d = ImageDraw.Draw(img)
-    d.text((25, 20), str(number), fill=(255, 255, 255))
+    # Try to use a font that's likely to be available
+    try:
+        font = ImageFont.truetype("arial.ttf", 24)
+        d.text((25, 20), str(number), fill=(255, 255, 255), font=font)
+    except:
+        d.text((25, 20), str(number), fill=(255, 255, 255))
     return img
 
 def switch_to_desktop(desktop_number):
+    print(f"Switching to desktop {desktop_number}")
     VirtualDesktop(desktop_number).go()
     update_icons()  # Update all icons to highlight current desktop
 
@@ -27,9 +33,9 @@ def move_window_to_desktop(desktop_number):
     target_desktop.go()
     update_icons()
 
-def on_icon_click(icon, desktop_number):
-    # Direct desktop switch on left-click
-    switch_to_desktop(desktop_number)
+def action_handler(icon, item):
+    if hasattr(item, 'desktop_number'):
+        switch_to_desktop(item.desktop_number)
 
 def create_desktop_icon(desktop_number, name):
     current_desktop = VirtualDesktop.current().number
@@ -37,15 +43,18 @@ def create_desktop_icon(desktop_number, name):
     
     icon_img = create_numbered_icon(desktop_number, is_current)
     
-    # Create icon with menu options
+    # Create icon with only click-to-switch functionality
     icon = pystray.Icon(f"Desktop_{desktop_number:02d}", icon_img, f"{name} (Desktop {desktop_number})")
     
-    # Set left-click handler to switch directly to this desktop
-    icon.on_click = lambda icon: on_icon_click(icon, desktop_number)
+    # Create a menu with the default item (clicked when left-clicking the icon)
+    switch_item = pystray.MenuItem(f"Switch to Desktop {desktop_number}", 
+                                  lambda: switch_to_desktop(desktop_number),
+                                  default=True)
+    # Store desktop number for direct access
+    switch_item.desktop_number = desktop_number
     
-    # Define menu for right-click
     icon.menu = pystray.Menu(
-        pystray.MenuItem(f"Switch to {name}", lambda: switch_to_desktop(desktop_number)),
+        switch_item,  # This is the default item that's triggered on left-click
         pystray.MenuItem("Move current window here", lambda: move_window_to_desktop(desktop_number)),
         pystray.MenuItem("Exit All", exit_all)
     )
