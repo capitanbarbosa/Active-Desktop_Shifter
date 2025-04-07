@@ -39,76 +39,83 @@ def get_display_text(name, number):
     if not name or name.isdigit():
         return str(number)
     
-    # For standard square icons, we need to be concise
+    # For multi-word names with numbers like "Music 1"
     words = name.split()
-    if len(words) > 1:
-        # For multi-word names, use initials (e.g., "Music 1" -> "M1")
-        text = ''.join([w[0] for w in words if w and w[0].isalpha()])
-        # If there are numbers in the name, append them
-        numbers = ''.join([w for w in words if w.isdigit()])
-        if numbers:
-            text += numbers
-        return text[:2]  # Keep it short for clarity
+    if len(words) > 1 and any(w.isdigit() for w in words):
+        # Find first letter and digit combination
+        text = ""
+        for w in words:
+            if w.isalpha() and not text:
+                text = w[:2].upper()  # Take up to 2 letters from first word
+            elif w.isdigit():
+                text += w  # Add the number
+                break
+        return text[:3]  # Limit to 3 chars total
+    
+    # For single words or multi-word without numbers
+    if len(words) == 1:
+        # For single words, show first 3 letters
+        return name[:3].upper()
     else:
-        # For single words, first 1-2 letters are usually enough
-        # and appear clearer in the system tray
-        return name[:2].upper()  # Uppercase looks better at small sizes
+        # For multi-word names, use first letter of each word (up to 3)
+        return ''.join(w[0].upper() for w in words[:3])
 
 def create_numbered_icon(number, name, is_current=False):
-    # System tray icons have size limitations, so let's optimize
-    width = 64  # More standard icon size
-    height = 64  # Use square icons which distort less
+    # Standard icon size
+    width = 64
+    height = 64
     
     # Create a higher resolution image and then resize down
-    # This helps with clarity when Windows scales the icon
     scale_factor = 4
     img = Image.new('RGB', (width*scale_factor, height*scale_factor), 
                    color=(0, 120, 200) if is_current else (100, 100, 100))
     d = ImageDraw.Draw(img)
     
-    # Get text to display (number or abbreviation of name)
+    # Get text to display with up to 3 letters
     display_text = get_display_text(name, number)
     
     try:
-        # Use larger font size for the high-res version
-        font_size = 36 * scale_factor // 2
+        # Adjust font size based on length of text
+        if len(display_text) <= 1:
+            font_size = 120  # Very large for single characters
+        elif len(display_text) == 2:
+            font_size = 90   # Slightly smaller for 2 characters
+        else:
+            font_size = 120   # Even smaller for 3 characters
+        
         try:
-            # Try to load a high-quality font
-            font = ImageFont.truetype("segoeui.ttf", font_size)  # Windows UI font
+            # Bold font if available
+            font = ImageFont.truetype("arialbd.ttf", font_size)  # Arial Bold
         except:
             try:
                 font = ImageFont.truetype("arial.ttf", font_size)
             except:
-                # If all else fails, use default
                 font = ImageFont.load_default()
         
-        # Calculate text position to center it
+        # Calculate position to center text
         try:
             text_width, text_height = d.textsize(display_text, font=font)
             position = ((width*scale_factor - text_width) // 2, 
                         (height*scale_factor - text_height) // 2)
         except:
-            # Fallback position if textsize fails
-            position = (width*scale_factor // 4, height*scale_factor // 3)
+            # Fallback position
+            position = (width*scale_factor // 6, height*scale_factor // 6)
         
-        # Draw on the high-res image
+        # Draw text with a slight shadow for better visibility
+        shadow_offset = 4
+        # Draw shadow first (black)
+        d.text((position[0]+shadow_offset, position[1]+shadow_offset), 
+               display_text, fill=(0, 0, 0), font=font)
+        # Draw main text
         d.text(position, display_text, fill=(255, 255, 255), font=font)
         
-        # Add a subtle border around the text for better visibility
-        if is_current:
-            # Draw a small indicator to show this is active
-            border = 10 * scale_factor
-            d.rectangle([(border, border), 
-                        (width*scale_factor-border, height*scale_factor-border)], 
-                        outline=(255, 255, 255), width=scale_factor)
-        
-        # Resize down to the target size with high quality
+        # Resize down to target size with high quality
         img = img.resize((width, height), Image.LANCZOS)
         
     except Exception as e:
         print(f"Icon creation error: {e}")
         # Simple fallback if anything fails
-        d.text((width*scale_factor//4, height*scale_factor//3), 
+        d.text((width*scale_factor//6, height*scale_factor//6), 
                str(number), fill=(255, 255, 255))
         img = img.resize((width, height), Image.NEAREST)
     
