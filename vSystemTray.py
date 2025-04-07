@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw
 from pyvda import VirtualDesktop, AppView, get_virtual_desktops
 import tkinter as tk
 import os
+import time
 
 # List to keep references to all icons
 icons = []
@@ -26,6 +27,10 @@ def move_window_to_desktop(desktop_number):
     target_desktop.go()
     update_icons()
 
+def on_icon_click(icon, desktop_number):
+    # Direct desktop switch on left-click
+    switch_to_desktop(desktop_number)
+
 def create_desktop_icon(desktop_number, name):
     current_desktop = VirtualDesktop.current().number
     is_current = (desktop_number == current_desktop)
@@ -33,9 +38,12 @@ def create_desktop_icon(desktop_number, name):
     icon_img = create_numbered_icon(desktop_number, is_current)
     
     # Create icon with menu options
-    icon = pystray.Icon(f"Desktop_{desktop_number}", icon_img, f"{name} (Desktop {desktop_number})")
+    icon = pystray.Icon(f"Desktop_{desktop_number:02d}", icon_img, f"{name} (Desktop {desktop_number})")
     
-    # Define menu for the icon
+    # Set left-click handler to switch directly to this desktop
+    icon.on_click = lambda icon: on_icon_click(icon, desktop_number)
+    
+    # Define menu for right-click
     icon.menu = pystray.Menu(
         pystray.MenuItem(f"Switch to {name}", lambda: switch_to_desktop(desktop_number)),
         pystray.MenuItem("Move current window here", lambda: move_window_to_desktop(desktop_number)),
@@ -58,15 +66,18 @@ def exit_all():
 desktops = get_virtual_desktops()
 desktop_names = ["Desktop " + str(i) for i in range(1, len(desktops) + 1)]
 
-# Create an icon for each desktop
-for i, name in enumerate(desktop_names, 1):
+# Create icons in reverse order to achieve correct display order
+for i in range(len(desktop_names), 0, -1):
+    name = desktop_names[i-1]
     icon = create_desktop_icon(i, name)
-    icons.append(icon)
+    icons.insert(0, icon)  # Insert at beginning to maintain correct order reference
 
-# Run each icon in its own thread
-for icon in icons[:-1]:  # All but the last icon
-    icon.run_detached()
+# Run each icon in its own thread, launch in reverse order
+# This helps ensure the system tray displays them in sequential order
+for i in range(len(icons)-1, 0, -1):
+    icons[i].run_detached()
+    time.sleep(0.1)  # Small delay to preserve order
 
-# Run the last icon in the main thread
+# Run the first icon in the main thread
 if icons:
-    icons[-1].run()
+    icons[0].run()
