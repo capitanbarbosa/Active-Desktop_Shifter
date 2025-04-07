@@ -497,11 +497,16 @@ def launch_desktop_switcher():
         if desktop_switcher_process is None or desktop_switcher_process.poll() is not None:
             # Start the process with a special command line argument for integration
             desktop_switcher_process = subprocess.Popen(
-                ["python", DESKTOP_SWITCHER_SCRIPT, "--integrate-with-systray"],
+                ["pythonw", DESKTOP_SWITCHER_SCRIPT, "--integrate-with-systray"],
                 stderr=subprocess.PIPE,
-                stdout=subprocess.PIPE
+                stdout=subprocess.PIPE,
+                creationflags=subprocess.CREATE_NO_WINDOW  # Hide console window
             )
             print("Launched desktop switcher")
+            
+            # Give the window time to initialize before showing it
+            time.sleep(0.2)
+            show_desktop_switcher()
     except Exception as e:
         print(f"Error launching desktop switcher: {e}")
 

@@ -343,6 +343,9 @@ def fade_in():
     
     window_visible = True
     
+    # Ensure window is still pinned after showing
+    root.after(10, pin_window)
+    
     # Restart highlight animation
     button_row.highlight_current_desktop()
 
@@ -422,6 +425,23 @@ def check_mouse_position():
     # Check again after interval
     root.after(MOUSE_CHECK_INTERVAL, check_mouse_position)
 
+# Add this function to handle window pinning
+def pin_window():
+    try:
+        # Get the window handle
+        hwnd = win32gui.GetParent(root.winfo_id())
+        # Set the window as a tool window
+        exstyle = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+        win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, 
+                             exstyle | win32con.WS_EX_TOOLWINDOW)
+        # Pin the window to all desktops using pyvda
+        AppView(hwnd).pin()
+        # Ensure it stays on top
+        win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
+                             win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE)
+    except Exception as e:
+        print(f"Error pinning window: {e}")
+
 # Initialize the UI
 root = tk.Tk()
 root.overrideredirect(True)
@@ -429,12 +449,25 @@ root.wm_attributes("-topmost", True)
 root.title("Active Window 🚀🌙⭐")
 root.configure(bg="#3f4652")  # Set the background color
 
-# Make window visible on all desktops
-hwnd = win32gui.GetParent(root.winfo_id())
-win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE,
-                      win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE) | win32con.WS_EX_TOOLWINDOW)
-root.after(10, lambda: win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
-                                           win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE))
+# Add this function to handle window pinning
+def pin_window():
+    try:
+        # Get the window handle
+        hwnd = win32gui.GetParent(root.winfo_id())
+        # Set the window as a tool window
+        exstyle = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+        win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, 
+                             exstyle | win32con.WS_EX_TOOLWINDOW)
+        # Pin the window to all desktops using pyvda
+        AppView(hwnd).pin()
+        # Ensure it stays on top
+        win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
+                             win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE)
+    except Exception as e:
+        print(f"Error pinning window: {e}")
+
+# Remove the old window pinning code and replace with this
+root.after(100, pin_window)  # Pin window after it's fully initialized
 
 button_row = ShortcutButtonRow(root)
 button_row.pack(side=tk.BOTTOM)
