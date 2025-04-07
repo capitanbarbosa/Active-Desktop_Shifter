@@ -36,6 +36,9 @@ desktop_color_map = {}
 # Flag to track if we need to restart icons
 restart_needed = False
 
+# Variable to track the current desktop in the polling thread
+last_known_desktop = None
+
 def load_desktop_names():
     try:
         with open(CONFIG_FILE_PATH, 'r') as file:
@@ -396,10 +399,40 @@ def exit_all():
         except:
             pass
 
+# Add this new function to poll for desktop changes
+def monitor_desktop_changes():
+    """Background thread that monitors for desktop changes from keyboard shortcuts or gestures"""
+    global last_known_desktop
+    
+    # Initialize with the current desktop
+    last_known_desktop = VirtualDesktop.current().number
+    
+    # Poll in a loop
+    while True:
+        try:
+            # Sleep to avoid excessive CPU usage
+            time.sleep(0.5)
+            
+            # Get the current desktop number
+            current_desktop = VirtualDesktop.current().number
+            
+            # If it changed, update the icons
+            if current_desktop != last_known_desktop:
+                print(f"Desktop changed from {last_known_desktop} to {current_desktop} (external)")
+                last_known_desktop = current_desktop
+                update_icons()
+        except Exception as e:
+            # In case of any error, just log and continue
+            print(f"Error monitoring desktop changes: {e}")
+            time.sleep(1)  # Longer sleep after error
+
 def create_and_run_icons():
-    global icons
+    global icons, last_known_desktop
     # Get all virtual desktops
     desktops = get_virtual_desktops()
+    
+    # Initialize last known desktop
+    last_known_desktop = VirtualDesktop.current().number
     
     # Ensure we have enough names for all desktops
     while len(desktop_names) < len(desktops):
@@ -410,6 +443,11 @@ def create_and_run_icons():
         name = desktop_names[i-1]
         icon = create_desktop_icon(i, name)
         icons.insert(0, icon)  # Insert at beginning to maintain correct order reference
+
+    # Start the desktop monitoring thread
+    monitor_thread = threading.Thread(target=monitor_desktop_changes)
+    monitor_thread.daemon = True
+    monitor_thread.start()
 
     # Run each icon in its own thread, launch in reverse order
     for i in range(len(icons)-1, 0, -1):
