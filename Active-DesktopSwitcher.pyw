@@ -145,8 +145,10 @@ class ShortcutButtonRow(tk.Frame):
             print("Invalid index number. Please provide a number between 1 and 7.")
             return
         
-        script_path = os.path.join("DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
-        script_path = os.path.abspath(script_path)
+        # Get the directory where this Python script is located
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+        # Create absolute path to the AHK script in the DesktopSwitcher subfolder
+        script_path = os.path.join(current_directory, "DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
         
         try:
             subprocess.run(["C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey64.exe", script_path], check=True)
@@ -259,13 +261,15 @@ class ShortcutButtonRow2(tk.Frame):
             print("Invalid index number. Please provide a number between 1 and 7.")
             return
         
-        script_path = os.path.join("DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
-        script_path = os.path.abspath(script_path)
+        # Get the directory where this Python script is located
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+        # Create absolute path to the AHK script in the DesktopSwitcher subfolder
+        script_path = os.path.join(current_directory, "DesktopSwitcher", f"DesktopSwitcher-d{index}.ahk")
         
         try:
             subprocess.run(["C:\\Program Files\\AutoHotkey\\v2\\AutoHotkey64.exe", script_path], check=True)
         except subprocess.CalledProcessError:
-            print(f"Failedto execute the AHK script: {script_path}")
+            print(f"Failed to execute the AHK script: {script_path}")
 
 
 def on_shift_key_press(event):
