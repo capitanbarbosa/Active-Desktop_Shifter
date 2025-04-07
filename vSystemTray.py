@@ -94,15 +94,34 @@ def get_desktop_color(desktop_number, is_current=False):
     """Get the color for a desktop based on its color setting and active state"""
     color_name = desktop_color_map.get(str(desktop_number), "Default")
     
-    # Only show custom colors when the desktop is active
-    if not is_current:
-        return (100, 100, 100)  # Always gray for inactive desktops
-    
-    # Active desktop colors
+    # Always use the selected color (or default if not set)
     if color_name == "Default":
-        return (0, 120, 200)  # Default blue for active desktop
+        return (0, 120, 200) if is_current else (80, 80, 80)  # Blue for active, darker gray for inactive
     else:
-        return default_desktop_colors[color_name]
+        # Use the custom color with different brightness based on active state
+        r, g, b = default_desktop_colors[color_name]
+        if not is_current:
+            # Darken the color for inactive desktops
+            return (max(r - 70, 0), max(g - 70, 0), max(b - 70, 0))
+        return (r, g, b)  # Use the full color for active desktops
+
+def get_border_color(desktop_number, is_current=False):
+    """Get a color for the icon border based on desktop settings"""
+    color_name = desktop_color_map.get(str(desktop_number), "Default")
+    
+    # Only active desktops get a border
+    if not is_current:
+        # For inactive desktops, use the same color as the fill (no border effect)
+        return get_desktop_color(desktop_number, is_current)
+    
+    # For active desktops, use a bright border of the same color family
+    if color_name == "Default":
+        return (0, 180, 255)  # Bright blue border
+    else:
+        # Get the base color and make it brighter for the border
+        r, g, b = default_desktop_colors[color_name]
+        # Brighten the color (with clamping to 255)
+        return (min(r + 55, 255), min(g + 55, 255), min(b + 55, 255))
 
 def create_numbered_icon(number, name, is_current=False):
     # Standard icon size
@@ -111,10 +130,42 @@ def create_numbered_icon(number, name, is_current=False):
     
     # Create a higher resolution image and then resize down
     scale_factor = 4
-    # Use the desktop's color
-    img = Image.new('RGB', (width*scale_factor, height*scale_factor), 
-                   color=get_desktop_color(number, is_current))
+    
+    # Create a transparent background image
+    img = Image.new('RGBA', (width*scale_factor, height*scale_factor), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
+    
+    # Get colors
+    fill_color = get_desktop_color(number, is_current)
+    border_color = get_border_color(number, is_current)
+    
+    # Calculate dimensions for shapes
+    border_width = 20 * scale_factor  # Width of the border
+    padding = 15 * scale_factor       # Padding from edge
+    
+    if is_current:
+        # For active desktop, draw the border and inner rectangle
+        # First draw the border (larger rectangle)
+        d.rectangle(
+            [padding, padding, width*scale_factor-padding, height*scale_factor-padding],
+            fill=border_color,
+            outline=None
+        )
+        
+        # Then draw the inner rectangle (main background)
+        d.rectangle(
+            [padding + border_width, padding + border_width, 
+             width*scale_factor-padding-border_width, height*scale_factor-padding-border_width],
+            fill=fill_color,
+            outline=None
+        )
+    else:
+        # For inactive desktop, just draw a single rectangle with the fill color
+        d.rectangle(
+            [padding, padding, width*scale_factor-padding, height*scale_factor-padding],
+            fill=fill_color,
+            outline=None
+        )
     
     # Get text to display with up to 3 letters
     display_text = get_display_text(name, number)
@@ -148,11 +199,11 @@ def create_numbered_icon(number, name, is_current=False):
         
         # Draw text with a slight shadow for better visibility
         shadow_offset = 4
-        # Draw shadow first (black)
+        # Draw shadow first (black with some transparency)
         d.text((position[0]+shadow_offset, position[1]+shadow_offset), 
-               display_text, fill=(0, 0, 0), font=font)
+               display_text, fill=(0, 0, 0, 200), font=font)
         # Draw main text
-        d.text(position, display_text, fill=(255, 255, 255), font=font)
+        d.text(position, display_text, fill=(255, 255, 255, 255), font=font)
         
         # Resize down to target size with high quality
         img = img.resize((width, height), Image.LANCZOS)
@@ -161,10 +212,38 @@ def create_numbered_icon(number, name, is_current=False):
         print(f"Icon creation error: {e}")
         # Simple fallback if anything fails
         d.text((width*scale_factor//6, height*scale_factor//6), 
-               str(number), fill=(255, 255, 255))
+               str(number), fill=(255, 255, 255, 255))
         img = img.resize((width, height), Image.NEAREST)
     
-    return img
+    # Convert RGBA to RGB for pystray (which doesn't support transparency well)
+    rgb_img = Image.new("RGB", img.size, (0, 0, 0))
+    rgb_img.paste(img, mask=img.split()[3])  # Use alpha channel as mask
+    
+    return rgb_img
+
+def next_desktop():
+    """Switch to the next desktop"""
+    current_desktop = VirtualDesktop.current().number
+    all_desktops = get_virtual_desktops()
+    max_desktop = len(all_desktops)
+    
+    next_desktop_num = current_desktop + 1
+    if next_desktop_num > max_desktop:
+        next_desktop_num = 1  # Wrap around to first
+    
+    switch_to_desktop(next_desktop_num)
+
+def prev_desktop():
+    """Switch to the previous desktop"""
+    current_desktop = VirtualDesktop.current().number
+    all_desktops = get_virtual_desktops()
+    max_desktop = len(all_desktops)
+    
+    prev_desktop_num = current_desktop - 1
+    if prev_desktop_num < 1:
+        prev_desktop_num = max_desktop  # Wrap around to last
+    
+    switch_to_desktop(prev_desktop_num)
 
 def set_desktop_color(desktop_number, color_name):
     """Set the color for a specific desktop"""
@@ -285,11 +364,18 @@ def create_desktop_icon(desktop_number, name):
         pystray.MenuItem("Yellow", lambda: set_desktop_color(desktop_number, "Yellow"))
     )
     
+    # Create navigation submenu instead of using mouse scroll
+    navigation_menu = pystray.Menu(
+        pystray.MenuItem("Next Desktop", next_desktop),
+        pystray.MenuItem("Previous Desktop", prev_desktop)
+    )
+    
     icon.menu = pystray.Menu(
         switch_item,  # This is the default item that's triggered on left-click
         pystray.MenuItem("Move current window here", lambda: move_window_to_desktop(desktop_number)),
         pystray.MenuItem("Rename this desktop", lambda: show_rename_dialog(desktop_number)),
         pystray.MenuItem("Set color", color_menu),
+        pystray.MenuItem("Navigate", navigation_menu),  # Add navigation submenu
         pystray.MenuItem("Exit All", exit_all)
     )
     
