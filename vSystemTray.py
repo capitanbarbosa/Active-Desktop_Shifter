@@ -10,12 +10,28 @@ import threading
 
 # Configuration file for desktop names
 CONFIG_FILE_PATH = 'desktop_names.json'
+# Configuration file for desktop colors
+COLOR_CONFIG_FILE_PATH = 'desktop_colors.json'
 
 # List to keep references to all icons
 icons = []
 
 # Default desktop names
 default_desktop_names = ["Log", "Coding", "Music 1", "Music 2", "Media", "Media 2", "Make"]
+
+# Default color map with RGB values
+default_desktop_colors = {
+    "Default": (100, 100, 100),
+    "Blue": (0, 120, 200),
+    "Red": (200, 50, 50),
+    "Green": (50, 180, 50),
+    "Orange": (255, 140, 0),
+    "Purple": (150, 50, 200),
+    "Yellow": (220, 220, 0)
+}
+
+# Map to store each desktop's color (desktop_number -> color_name)
+desktop_color_map = {}
 
 # Flag to track if we need to restart icons
 restart_needed = False
@@ -32,6 +48,20 @@ def load_desktop_names():
 def save_desktop_names(names):
     with open(CONFIG_FILE_PATH, 'w') as file:
         json.dump(names, file)
+
+def load_desktop_colors():
+    try:
+        with open(COLOR_CONFIG_FILE_PATH, 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        # Initialize with default colors (all desktops use default active/inactive colors)
+        colors = {}
+        save_desktop_colors(colors)
+        return colors
+
+def save_desktop_colors(colors):
+    with open(COLOR_CONFIG_FILE_PATH, 'w') as file:
+        json.dump(colors, file)
 
 def get_display_text(name, number):
     """Get text to display in the icon based on the name"""
@@ -60,15 +90,30 @@ def get_display_text(name, number):
         # For multi-word names, use first letter of each word (up to 3)
         return ''.join(w[0].upper() for w in words[:3])
 
+def get_desktop_color(desktop_number, is_current=False):
+    """Get the color for a desktop based on its color setting and active state"""
+    color_name = desktop_color_map.get(str(desktop_number), "Default")
+    
+    # Only show custom colors when the desktop is active
+    if not is_current:
+        return (100, 100, 100)  # Always gray for inactive desktops
+    
+    # Active desktop colors
+    if color_name == "Default":
+        return (0, 120, 200)  # Default blue for active desktop
+    else:
+        return default_desktop_colors[color_name]
+
 def create_numbered_icon(number, name, is_current=False):
     # Standard icon size
-    width = 64
-    height = 64
+    width = 256
+    height = 256
     
     # Create a higher resolution image and then resize down
     scale_factor = 4
+    # Use the desktop's color
     img = Image.new('RGB', (width*scale_factor, height*scale_factor), 
-                   color=(0, 120, 200) if is_current else (100, 100, 100))
+                   color=get_desktop_color(number, is_current))
     d = ImageDraw.Draw(img)
     
     # Get text to display with up to 3 letters
@@ -77,11 +122,11 @@ def create_numbered_icon(number, name, is_current=False):
     try:
         # Adjust font size based on length of text
         if len(display_text) <= 1:
-            font_size = 120  # Very large for single characters
+            font_size = 320  # Very large for single characters
         elif len(display_text) == 2:
-            font_size = 90   # Slightly smaller for 2 characters
+            font_size = 320   # Slightly smaller for 2 characters
         else:
-            font_size = 120   # Even smaller for 3 characters
+            font_size = 320   # Even smaller for 3 characters
         
         try:
             # Bold font if available
@@ -120,6 +165,12 @@ def create_numbered_icon(number, name, is_current=False):
         img = img.resize((width, height), Image.NEAREST)
     
     return img
+
+def set_desktop_color(desktop_number, color_name):
+    """Set the color for a specific desktop"""
+    desktop_color_map[str(desktop_number)] = color_name
+    save_desktop_colors(desktop_color_map)
+    update_icons()  # Update all icons to reflect new color
 
 def switch_to_desktop(desktop_number):
     print(f"Switching to desktop {desktop_number}")
@@ -223,10 +274,22 @@ def create_desktop_icon(desktop_number, name):
                                   lambda: switch_to_desktop(desktop_number),
                                   default=True)
     
+    # Create color submenu
+    color_menu = pystray.Menu(
+        pystray.MenuItem("Default", lambda: set_desktop_color(desktop_number, "Default")),
+        pystray.MenuItem("Red", lambda: set_desktop_color(desktop_number, "Red")),
+        pystray.MenuItem("Green", lambda: set_desktop_color(desktop_number, "Green")),
+        pystray.MenuItem("Blue", lambda: set_desktop_color(desktop_number, "Blue")),
+        pystray.MenuItem("Orange", lambda: set_desktop_color(desktop_number, "Orange")),
+        pystray.MenuItem("Purple", lambda: set_desktop_color(desktop_number, "Purple")),
+        pystray.MenuItem("Yellow", lambda: set_desktop_color(desktop_number, "Yellow"))
+    )
+    
     icon.menu = pystray.Menu(
         switch_item,  # This is the default item that's triggered on left-click
         pystray.MenuItem("Move current window here", lambda: move_window_to_desktop(desktop_number)),
         pystray.MenuItem("Rename this desktop", lambda: show_rename_dialog(desktop_number)),
+        pystray.MenuItem("Set color", color_menu),
         pystray.MenuItem("Exit All", exit_all)
     )
     
@@ -273,6 +336,9 @@ def create_and_run_icons():
 
 # Load desktop names from config
 desktop_names = load_desktop_names()
+
+# Load desktop colors from config
+desktop_color_map = load_desktop_colors()
 
 # Start creating and running icons
 create_and_run_icons()
