@@ -127,23 +127,25 @@ class ShortcutButtonRow(tk.Frame):
             elif isinstance(self, ShortcutButtonRow2):
                 row.buttons[index].config(text=(" " + new_text + " ").center(5))
 
-    def execute_shift(self, index):
-        print("indexz: " + str(index))
-        ahk_script = r'"C:\Program Files\AutoHotkey\UX\AutoHotkeyUX.exe"'
-        script_path = r'"shift_window.ahk"'
-        subprocess.run([ahk_script, script_path, str(index)])
-
     def execute_shortcut(self, index):
-        index_str = str(index)
-        for button in self.buttons:
-            button.config(bg="#FF99" if button["text"] == index_str else "#3f4652")
-        pyautogui.keyDown('win')
-        pyautogui.keyDown('alt')
-        pyautogui.keyDown('shift')
-        pyautogui.press(index_str)
-        pyautogui.keyUp('win')
-        pyautogui.keyUp('alt')
-        pyautogui.keyUp('shift')
+        """Improved desktop switching with fallback"""
+        try:
+            # First try pyvda method
+            VirtualDesktop(index).go()
+        except Exception as e:
+            print(f"Desktop switch error ({index}): {e}")
+            # Fallback to keyboard shortcut
+            self.fallback_shortcut(index)
+            
+        self.highlight_current_desktop()
+
+    def fallback_shortcut(self, index):
+        """Keyboard fallback for desktop switching"""
+        try:
+            pyautogui.hotkey('ctrl', 'win', str(index))
+            time.sleep(0.1)
+        except Exception as e:
+            print(f"Fallback shortcut failed: {e}")
 
     def execute_shortcut2(self, index):
         pyautogui.hotkey('win', 'tab')
@@ -160,11 +162,13 @@ class ShortcutButtonRow(tk.Frame):
         pyautogui.keyUp('shift')
 
     def shortcut3(self, index):
-        if index < 1 or index > 7:
-            print("Invalid index number. Please provide a number between 1 and 7.")
-            return
-        
-        move_active_window_to_desktop(index)
+        """Updated to use pyvda directly"""
+        try:
+            current_window = AppView.current()
+            target_desktop = VirtualDesktop(index)
+            current_window.move(target_desktop)
+        except Exception as e:
+            print(f"Error moving window to desktop {index}: {e}")
 
 class ShortcutButtonRow2(tk.Frame):
     def __init__(self, master):
@@ -375,16 +379,21 @@ def check_command_file():
     root.after(500, check_command_file)
 
 def move_active_window_to_desktop(desktop_number):
-    """Move the currently active window to the specified desktop without following it"""
-    try:
-        # Get the current active window
-        current_window = AppView.current()
-        # Get the target desktop
-        target_desktop = VirtualDesktop(desktop_number)
-        # Move the window without following it
-        current_window.move(target_desktop)
-    except Exception as e:
-        print(f"Error moving window to desktop {desktop_number}: {e}")
+    """Improved window moving with retries"""
+    for attempt in range(3):
+        try:
+            current_window = AppView.current()
+            if not current_window.hwnd:
+                raise ValueError("No window handle")
+                
+            target_desktop = VirtualDesktop(desktop_number)
+            current_window.move(target_desktop)
+            return
+        except Exception as e:
+            print(f"Window move error (attempt {attempt+1}): {e}")
+            time.sleep(0.2)
+    
+    print(f"Failed to move window to desktop {desktop_number} after 3 attempts")
 
 # Add this new function
 def check_mouse_position():
@@ -427,20 +436,50 @@ def check_mouse_position():
 
 # Add this function to handle window pinning
 def pin_window():
+    """Improved window pinning with retries and error handling"""
+    global window_visible
     try:
-        # Get the window handle
-        hwnd = win32gui.GetParent(root.winfo_id())
-        # Set the window as a tool window
+        # Get the window handle with retries
+        hwnd = None
+        for _ in range(5):  # Try up to 5 times
+            try:
+                hwnd = win32gui.GetParent(root.winfo_id())
+                if hwnd:
+                    break
+            except:
+                pass
+            time.sleep(0.1)
+        
+        if not hwnd:
+            print("Failed to get window handle")
+            return
+
+        # Set window attributes with validation
         exstyle = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
-        win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, 
-                             exstyle | win32con.WS_EX_TOOLWINDOW)
-        # Pin the window to all desktops using pyvda
-        AppView(hwnd).pin()
-        # Ensure it stays on top
-        win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
-                             win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE)
+        new_style = exstyle | win32con.WS_EX_TOOLWINDOW
+        win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, new_style)
+        
+        # Pin to all desktops with validation
+        try:
+            AppView(hwnd).pin()
+        except Exception as e:
+            print(f"Pinning fallback: {e}")
+            # Fallback to window property method
+            win32gui.SetProp(hwnd, "VirtualDesktopPinned", True)
+        
+        # Set window position with validation
+        try:
+            win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
+                                win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | 
+                                win32con.SWP_NOACTIVATE)
+        except Exception as e:
+            print(f"Window positioning error: {e}")
+
     except Exception as e:
-        print(f"Error pinning window: {e}")
+        print(f"Pinning error: {e}")
+        # Schedule retry if window is visible
+        if window_visible:
+            root.after(1000, pin_window)
 
 # Initialize the UI
 root = tk.Tk()
@@ -450,23 +489,6 @@ root.title("Active Window 🚀🌙⭐")
 root.configure(bg="#3f4652")  # Set the background color
 
 # Add this function to handle window pinning
-def pin_window():
-    try:
-        # Get the window handle
-        hwnd = win32gui.GetParent(root.winfo_id())
-        # Set the window as a tool window
-        exstyle = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
-        win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, 
-                             exstyle | win32con.WS_EX_TOOLWINDOW)
-        # Pin the window to all desktops using pyvda
-        AppView(hwnd).pin()
-        # Ensure it stays on top
-        win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
-                             win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE)
-    except Exception as e:
-        print(f"Error pinning window: {e}")
-
-# Remove the old window pinning code and replace with this
 root.after(100, pin_window)  # Pin window after it's fully initialized
 
 button_row = ShortcutButtonRow(root)
