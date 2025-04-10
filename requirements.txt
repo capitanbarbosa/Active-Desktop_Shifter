@@ -1,3 +1,7 @@
+pystray
+Pillow
+pyvda
 pyautogui
 keyboard
-pyvda
+pywin32
+pypiwin32  # Fallback for some systems
