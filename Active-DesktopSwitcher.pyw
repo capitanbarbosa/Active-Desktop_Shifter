@@ -92,9 +92,9 @@ class ShortcutButtonRow(tk.Frame):
             else:
                 button.config(bg="#3f4652")
         
-        # Only schedule next update if window is visible
+        # Update faster (200ms instead of 420ms)
         if window_visible:
-            self.after(420, self.highlight_current_desktop)
+            self.after(200, self.highlight_current_desktop)
 
     def create_button(self, name="", padx=5, bg="#3f4652"):
         index = len(self.buttons) + 1
@@ -308,21 +308,21 @@ def on_leave(event):
     hide_timer = root.after(3000, fade_out)  # 3 seconds before fading out
 
 def fade_out():
-    """Gradually fade out the window"""
+    """Gradually fade out the window (faster version)"""
     global window_visible
     
     # If mouse is back inside, don't fade out
     if mouse_inside:
         return
     
-    # Fade out over 500ms (10 steps of 50ms)
-    for alpha in range(10, -1, -1):
+    # Faster fade out over 250ms (5 steps of 50ms)
+    for alpha in range(5, -1, -1):
         if mouse_inside:  # Stop fading if mouse enters during fade
             return
-        opacity = alpha / 10.0
+        opacity = alpha / 5.0
         root.attributes('-alpha', opacity)
         root.update()
-        time.sleep(0.05)
+        time.sleep(0.05)  # Keep same interval but fewer steps
     
     window_visible = False
     # Make window invisible but still running
