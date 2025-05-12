@@ -19,3 +19,25 @@ We have successfully restructured your application into a more modular design:
 
 - appbar_manager.py: Encapsulates all the logic for registering the TopMenuBar as a Windows App Bar, managing its position, and handling related window events.
 
+
+
+
+
+
+
+
+
+
+
+
+
+----> we're missing the notes per desktop. now that we have our active task per desktop. sorta like making active task the header and the notes the body/text
+
+
+
+
+
+
+
+
+

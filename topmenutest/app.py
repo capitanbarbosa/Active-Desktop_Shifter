@@ -62,7 +62,7 @@ class TopMenuBar(QMainWindow):
             self.current_desktop_number = 0 
 
         screen = QApplication.primaryScreen().geometry()
-        self.bar_height = 40
+        self.bar_height = 33
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)

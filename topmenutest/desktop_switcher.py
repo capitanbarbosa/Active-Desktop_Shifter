@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QPushButton
+from PyQt6.QtWidgets import QPushButton, QInputDialog
 from PyQt6.QtCore import Qt
 from pyvda import VirtualDesktop, AppView
 import win32gui
@@ -34,6 +34,25 @@ class DesktopButton(QPushButton):
         self.setCheckable(True)
         self.clicked.connect(self.switch_desktop)
         self.shift_clicked = False # This will be updated by TopMenuBar
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.edit_desktop_name)
+
+    def edit_desktop_name(self):
+        """Edit the desktop name on right-click"""
+        current_text = self.text()
+        new_text, ok = QInputDialog.getText(
+            self, 
+            "Edit Desktop Name", 
+            "Enter new name for desktop:", 
+            text=current_text
+        )
+        if ok and new_text:
+            # Update the button text
+            self.setText(new_text)
+            # Update the DESKTOP_NAMES dictionary
+            DESKTOP_NAMES[self.desktop_number] = new_text
+            # Optional: Save the updated names to a config file
+            # self.save_desktop_names()
 
     def switch_desktop(self):
         if self.shift_clicked:
@@ -113,4 +132,9 @@ class DesktopButton(QPushButton):
             # HRESULT 0x800401E4 - MK_E_SYNTAX
             elif hasattr(e, 'args') and e.args and e.args[0] == -2147221020:
                 print("   This specific error (MK_E_SYNTAX) can sometimes indicate the window is not suitable for virtual desktop operations (e.g., a child window or certain types of tool windows).")
+
+    # Optional: Add a method to save desktop names to a config file
+    # def save_desktop_names(self):
+    #    # Code to save the updated DESKTOP_NAMES to a file
+    #    pass
 
