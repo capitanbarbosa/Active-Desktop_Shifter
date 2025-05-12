@@ -18,6 +18,7 @@ from system_stats import SystemStats
 from start_menu import StartButton
 from search_bar import SearchButton
 from appbar_manager import AppBarManager
+from active_task import ActiveTaskWidget
 
 # Import constants
 from constants import DESKTOP_NAMES, ABM_NEW, ABM_REMOVE, ABM_QUERYPOS, ABM_SETPOS, ABE_TOP # ABE_BOTTOM is not used in app.py
@@ -70,18 +71,28 @@ class TopMenuBar(QMainWindow):
 
         self.desktop_buttons = []
         for i in range(1, 8):  # 7 desktops
-            btn = DesktopButton(i, self) # Pass self as parent
+            btn = DesktopButton(i, self)
             self.desktop_buttons.append(btn)
             layout.addWidget(btn)
 
-        # System stats widget
+        # Add the Active Task widget here
+        self.active_task_widget = ActiveTaskWidget(self)
+        layout.addWidget(self.active_task_widget)
+
+        # Add a stretching space to push system stats to the right
+        layout.addStretch(1)
+
+        # System stats widget (now on the far right)
         self.stats_widget = SystemStats(self)
         layout.addWidget(self.stats_widget)
 
         # Update timer for desktop highlighting (stats timer is in SystemStats)
-        self.desktop_highlight_timer = QTimer(self) # Renamed timer
-        self.desktop_highlight_timer.timeout.connect(self.update_desktop_button_states) # Renamed method
+        self.desktop_highlight_timer = QTimer(self)
+        self.desktop_highlight_timer.timeout.connect(self.update_desktop_button_states)
         self.desktop_highlight_timer.start(1000)
+
+        # Add this to track the current desktop
+        self.current_desktop_number = 0  # Initialize with 0 (will be updated on first check)
 
         self.setStyleSheet("""
             QMainWindow {
@@ -178,6 +189,14 @@ class TopMenuBar(QMainWindow):
         try:
             current_desktop = VirtualDesktop.current()
             current_number = current_desktop.number
+            
+            # Check if desktop has changed
+            if current_number != self.current_desktop_number:
+                self.current_desktop_number = current_number
+                # Update the active task when desktop changes
+                self.active_task_widget.on_desktop_changed()
+            
+            # Update button highlighting
             for btn in self.desktop_buttons:
                 btn.setChecked(btn.desktop_number == current_number)
         except Exception as e:
