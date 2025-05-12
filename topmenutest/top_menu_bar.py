@@ -49,6 +49,7 @@ class DesktopButton(QPushButton):
         self.desktop_number = desktop_number
         self.setFixedSize(60, 30)
         self.setText(DESKTOP_NAMES.get(desktop_number, str(desktop_number)))
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setStyleSheet("""
             QPushButton {
                 background-color: #3f4652;
@@ -81,22 +82,89 @@ class DesktopButton(QPushButton):
             print(f"Desktop switch error ({self.desktop_number}): {e}")
 
     def move_window_to_desktop(self):
+        parent_menubar = self.window()  # Get the TopMenuBar instance
+
+        if not hasattr(parent_menubar, 'last_active_app_hwnd'):
+            print("Error: Parent menubar does not have 'last_active_app_hwnd' attribute.")
+            return
+
+        hwnd_to_move = parent_menubar.last_active_app_hwnd
+        menubar_hwnd = parent_menubar.winId().__int__()
+
+        if not hwnd_to_move:
+            print(
+                "No active application window recorded to move. Please focus an application window first.")
+            # Optional: Attempt a fallback to AppView.current() but be wary
+            try:
+                print(
+                    "Debug: No last_active_app_hwnd, attempting fallback to AppView.current()...")
+                current_app_view = AppView.current()
+                if current_app_view and current_app_view.hwnd and current_app_view.hwnd != menubar_hwnd:
+                    hwnd_to_move = current_app_view.hwnd
+                    print(
+                        f"Debug: Fallback AppView.current() identified HWND: {hwnd_to_move} (Title: '{win32gui.GetWindowText(hwnd_to_move)}')")
+                else:
+                    current_title = win32gui.GetWindowText(
+                        win32gui.GetForegroundWindow()) if win32gui.GetForegroundWindow() else "N/A"
+                    print(
+                        f"Debug: Fallback AppView.current() failed or identified the menubar (Current Foreground: '{current_title}'). Aborting move.")
+                    return
+            except Exception as e_fallback:
+                print(
+                    f"Debug: Fallback to AppView.current() failed: {e_fallback}")
+                return
+
+        if hwnd_to_move == menubar_hwnd:
+            print("Error: The window to move is the menu bar itself (last_active_app_hwnd pointed to menubar). Aborting.")
+            return
+
         try:
-            current_window = AppView.current()
+            window_title = win32gui.GetWindowText(hwnd_to_move)
+            print(
+                f"Attempting to move window HWND: {hwnd_to_move} (Title: '{window_title}') to desktop {self.desktop_number}")
+
+            # Create AppView directly with the HWND
+            app_to_move = AppView(hwnd=hwnd_to_move)
             target_desktop = VirtualDesktop(self.desktop_number)
-            current_window.move(target_desktop)
+            app_to_move.move(target_desktop)
+            print(
+                f"Successfully moved window (HWND: {hwnd_to_move}, Title: '{window_title}') to desktop {self.desktop_number}.")
+
         except Exception as e:
-            print(f"Error moving window to desktop {self.desktop_number}: {e}")
+            title_on_error = "N/A"
+            try:
+                title_on_error = win32gui.GetWindowText(hwnd_to_move)
+            except:
+                pass
+            print(
+                f"Error moving window (HWND: {hwnd_to_move}, Title: '{title_on_error}') to desktop {self.desktop_number}: {e}")
+            if "Element not found" in str(e):
+                print(
+                    "   This might mean the recorded HWND is no longer valid, not a top-level window, or not compatible with pyvda.")
+            # HRESULT 0x800401E4 - MK_E_SYNTAX
+            elif hasattr(e, 'args') and e.args and e.args[0] == -2147221020:
+                print("   This specific error (MK_E_SYNTAX) can sometimes indicate the window is not suitable for virtual desktop operations (e.g., a child window or certain types of tool windows).")
 
 
 class TopMenuBar(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Top Menu Bar")
+
+        # self.setWindowFlags(...) should be called AFTER we have a HWND if we want to modify it with win32gui,
+        # but for this strategy, we are removing the direct win32gui manipulation of WS_EX_NOACTIVATE here.
+
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint |
             Qt.WindowType.Tool
         )
+
+        self.last_active_app_hwnd = None
+        # Parent to self for auto-cleanup
+        self.focus_check_timer = QTimer(self)
+        self.focus_check_timer.timeout.connect(
+            self.update_last_active_app_hwnd)
+        self.focus_check_timer.start(250)  # Check every 250ms
 
         # Get screen dimensions
         screen = QApplication.primaryScreen().geometry()
@@ -165,14 +233,45 @@ class TopMenuBar(QMainWindow):
 
         # Set up window event handling
         self.old_win_event = win32gui.SetWindowLong(
-            self.winId().__int__(),
+            self.winId().__int__(),  # winId() should be valid here
             win32con.GWL_WNDPROC,
             self.win_event_proc
         )
+        # It's possible that SetWindowLong for GWL_WNDPROC or register_appbar resets EX_STYLE.
+        # If WS_EX_NOACTIVATE doesn't stick, we might need to re-apply it later, e.g., in a showEvent.
 
         # Set up shift key monitoring
         self.shift_pressed = False
         self.setup_shift_monitoring()
+
+    def update_last_active_app_hwnd(self):
+        try:
+            current_fg_hwnd = win32gui.GetForegroundWindow()
+            # Ensure self.winId() is valid before trying to get an int from it
+            # It might not be fully initialized when the timer first fires.
+            if not self.winId():
+                return
+            menubar_hwnd = self.winId().__int__()
+
+            if current_fg_hwnd != 0 and current_fg_hwnd != menubar_hwnd:
+                # Check if it's a visible, top-level, enabled window
+                # This helps filter out some unsuitable windows (e.g., hidden helper windows)
+                if win32gui.IsWindowVisible(current_fg_hwnd) and \
+                   win32gui.IsWindowEnabled(current_fg_hwnd) and \
+                   win32gui.GetParent(current_fg_hwnd) == 0:  # Check if it's a top-level window
+
+                    if self.last_active_app_hwnd != current_fg_hwnd:
+                        try:
+                            # title = win32gui.GetWindowText(current_fg_hwnd)
+                            # print(f"Debug: last_active_app_hwnd updated to {current_fg_hwnd} (Title: '{title}')")
+                            pass  # Keep debug print commented for now to avoid noise
+                        except Exception:  # If GetWindowText fails for some reason
+                            # print(f"Debug: last_active_app_hwnd updated to {current_fg_hwnd} (Could not get title)")
+                            pass
+                        self.last_active_app_hwnd = current_fg_hwnd
+        except Exception as e:
+            # print(f"Minor error in update_last_active_app_hwnd: {e}")
+            pass  # Keep it silent unless actively debugging this part
 
     def setup_shift_monitoring(self):
         # Create a timer to check shift key state
