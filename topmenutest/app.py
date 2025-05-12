@@ -90,15 +90,15 @@ class TopMenuBar(QMainWindow):
         # Add the Active Task widget here
         self.active_task_widget = ActiveTaskWidget(self, self.persistence_manager)
         layout.addWidget(self.active_task_widget)
-        
-        # Add the File Launcher widget
+
+        # Add a stretching space to push right-side widgets to the right
+        layout.addStretch(1)
+
+        # Add the File Launcher widget (now on the right)
         self.file_launcher_widget = FileLauncherWidget(self)
         layout.addWidget(self.file_launcher_widget)
 
-        # Add a stretching space to push system stats to the right
-        layout.addStretch(1)
-
-        # System stats widget (now on the far right)
+        # System stats widget (on the far right)
         self.stats_widget = SystemStats(self)
         layout.addWidget(self.stats_widget)
 
