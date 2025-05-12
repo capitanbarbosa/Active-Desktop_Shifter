@@ -20,6 +20,7 @@ from search_bar import SearchButton
 from appbar_manager import AppBarManager
 from active_task import ActiveTaskWidget
 from persistence_manager import PersistenceManager
+from file_launcher import FileLauncherWidget
 
 # Import constants
 from constants import DESKTOP_NAMES, ABM_NEW, ABM_REMOVE, ABM_QUERYPOS, ABM_SETPOS, ABE_TOP # ABE_BOTTOM is not used in app.py
@@ -89,6 +90,10 @@ class TopMenuBar(QMainWindow):
         # Add the Active Task widget here
         self.active_task_widget = ActiveTaskWidget(self, self.persistence_manager)
         layout.addWidget(self.active_task_widget)
+        
+        # Add the File Launcher widget
+        self.file_launcher_widget = FileLauncherWidget(self)
+        layout.addWidget(self.file_launcher_widget)
 
         # Add a stretching space to push system stats to the right
         layout.addStretch(1)
