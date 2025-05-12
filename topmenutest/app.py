@@ -19,6 +19,7 @@ from start_menu import StartButton
 from search_bar import SearchButton
 from appbar_manager import AppBarManager
 from active_task import ActiveTaskWidget
+from persistence_manager import PersistenceManager
 
 # Import constants
 from constants import DESKTOP_NAMES, ABM_NEW, ABM_REMOVE, ABM_QUERYPOS, ABM_SETPOS, ABE_TOP # ABE_BOTTOM is not used in app.py
@@ -52,6 +53,13 @@ class TopMenuBar(QMainWindow):
             self.update_last_active_app_hwnd)
         self.focus_check_timer.start(250)
 
+        # Attempt to set current_desktop_number reliably before ActiveTaskWidget init
+        try:
+            self.current_desktop_number = VirtualDesktop.current().number
+        except Exception:
+            # print("Initial desktop query failed in TopMenuBar, defaulting to 0") # Optional: for debugging
+            self.current_desktop_number = 0 
+
         screen = QApplication.primaryScreen().geometry()
         self.bar_height = 40
 
@@ -75,8 +83,11 @@ class TopMenuBar(QMainWindow):
             self.desktop_buttons.append(btn)
             layout.addWidget(btn)
 
+        # Initialize PersistenceManager
+        self.persistence_manager = PersistenceManager()
+
         # Add the Active Task widget here
-        self.active_task_widget = ActiveTaskWidget(self)
+        self.active_task_widget = ActiveTaskWidget(self, self.persistence_manager)
         layout.addWidget(self.active_task_widget)
 
         # Add a stretching space to push system stats to the right
@@ -90,9 +101,6 @@ class TopMenuBar(QMainWindow):
         self.desktop_highlight_timer = QTimer(self)
         self.desktop_highlight_timer.timeout.connect(self.update_desktop_button_states)
         self.desktop_highlight_timer.start(1000)
-
-        # Add this to track the current desktop
-        self.current_desktop_number = 0  # Initialize with 0 (will be updated on first check)
 
         self.setStyleSheet("""
             QMainWindow {
