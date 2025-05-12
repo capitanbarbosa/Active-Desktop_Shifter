@@ -8,6 +8,7 @@ import time
 import json
 import threading
 import subprocess
+import sys
 
 # Configuration file for desktop names
 CONFIG_FILE_PATH = 'desktop_names.json'
@@ -425,7 +426,8 @@ def create_desktop_icon(desktop_number, name):
         pystray.MenuItem("Set color", color_menu),
         pystray.MenuItem("Navigate", navigation_menu),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem("Reorder Desktops", reorder_desktops),  # New option
+        pystray.MenuItem("Reorder Desktops", reorder_desktops),
+        pystray.MenuItem("Restart App", restart_app),
         pystray.MenuItem("Exit All", exit_all)
     )
 
@@ -442,11 +444,23 @@ def update_icons():
 
 
 def exit_all():
+    global desktop_switcher_process
+    # Terminate desktop switcher process
+    if desktop_switcher_process:
+        try:
+            desktop_switcher_process.terminate()
+        except:
+            pass
+    # Stop all icons
     for icon in icons:
         try:
             icon.stop()
         except:
             pass
+    # Additional cleanup for any remaining processes
+    subprocess.call(['taskkill', '/IM', 'pythonw.exe', '/FI',
+                     'WINDOWTITLE eq Desktop Switcher UI'], shell=True)
+
 
 # Add this new function to poll for desktop changes
 
@@ -628,6 +642,39 @@ def recreate_icons():
     exit_all()  # Stop existing icons
     icons = []  # Clear icon references
     create_and_run_icons()  # Recreate with new order
+
+
+def restart_app():
+    """Restart the application using the appropriate Python environment"""
+    def restart_thread():
+        # Get current Python executable path
+        venv_python = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "venv",
+            "Scripts",
+            "pythonw.exe"
+        )
+
+        # Determine which Python to use
+        if getattr(sys, 'base_prefix', None) != sys.prefix:
+            python_exec = sys.executable
+        elif os.path.exists(venv_python):
+            python_exec = venv_python
+        else:
+            python_exec = sys.executable
+
+        # Exit current instance
+        exit_all()
+        time.sleep(0.5)
+
+        # Restart using batch file if available
+        if os.path.exists("launch.bat"):
+            os.startfile("launch.bat")
+        else:
+            # Fallback to direct Python execution
+            os.execl(python_exec, python_exec, *sys.argv)
+
+    threading.Thread(target=restart_thread, daemon=True).start()
 
 
 # Start creating and running icons

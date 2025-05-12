@@ -1,0 +1,9 @@
+pystray
+Pillow
+pyvda
+pyautogui
+keyboard
+pywin32
+pypiwin32  # Fallback for some systems
+PyQt6
+psutil

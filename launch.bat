@@ -2,6 +2,10 @@
 echo [INFO] Starting Active Desktop Shifter setup...
 echo [DEBUG] Current directory: %CD%
 
+REM Clean up any existing processes
+taskkill /IM pythonw.exe /FI "WINDOWTITLE eq Virtual Desktop System Tray" >nul 2>&1
+taskkill /IM pythonw.exe /FI "WINDOWTITLE eq Desktop Switcher UI" >nul 2>&1
+
 REM Check virtual environment
 if not exist venv\ (
     echo [INFO] Creating new virtual environment...
